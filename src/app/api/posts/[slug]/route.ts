@@ -5,9 +5,14 @@ import { BlogPost } from '@/types/blog';
 
 const POSTS_FILE = path.join(process.cwd(), 'src/data/blog-posts.ts');
 
-export async function DELETE(request: Request, { params }: { params: { slug: string } }) {
+/**
+ * @param {Request} request
+ * @param {{ params: { slug: string } }} context
+ */
+// @ts-expect-error Next.js does not provide explicit types for context
+export async function DELETE(request, context) {
   try {
-    const { slug } = params;
+    const { slug } = context.params;
     // Read existing posts
     const fileContent = await readFile(POSTS_FILE, 'utf-8');
     const postsMatch = fileContent.match(/export const blogPosts: BlogPost\[\] = (\[[\s\S]*?\]);/);
@@ -33,9 +38,14 @@ export async function DELETE(request: Request, { params }: { params: { slug: str
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { slug: string } }) {
+/**
+ * @param {Request} request
+ * @param {{ params: { slug: string } }} context
+ */
+// @ts-expect-error Next.js does not provide explicit types for context
+export async function PUT(request, context) {
   try {
-    const { slug } = params;
+    const { slug } = context.params;
     const updated = await request.json();
     // Read existing posts
     const fileContent = await readFile(POSTS_FILE, 'utf-8');

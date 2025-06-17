@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import Image from 'next/image';
+// import Image from 'next/image'; // Removed unused import
 
 interface ImageUploadProps {
   onImageUpload: (imageUrl: string) => void;
