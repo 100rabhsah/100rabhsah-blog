@@ -1,7 +1,6 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '@/context/AdminContext';
-import { blogPosts } from '@/data/blog-posts';
 import BlogPostForm from '@/components/BlogPostForm';
 import { BlogPost } from '@/types/blog';
 import { useState, useEffect } from 'react';
@@ -11,22 +10,42 @@ export default function EditPostPageContent({ slug }: { slug: string }) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [post, setPost] = useState<BlogPost | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const found = blogPosts.find((p) => p.slug === slug);
-    setPost(found || null);
+    const fetchPost = async () => {
+      try {
+        const response = await fetch(`/api/posts/${slug}`);
+        if (!response.ok) {
+          throw new Error('Post not found');
+        }
+        const data = await response.json();
+        setPost(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch post');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
   }, [slug]);
 
   if (!isAdmin) {
     return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-red-600">Admin access required.</div>;
   }
+
+  if (loading) {
+    return <div className="max-w-2xl mx-auto px-4 py-8 text-center">Loading...</div>;
+  }
+
   if (!post) {
     return <div className="max-w-2xl mx-auto px-4 py-8 text-center">Post not found.</div>;
   }
 
   const handleSubmit = async (updated: Omit<BlogPost, 'id'>) => {
     try {
-      const response = await fetch(`/api/posts/${post.slug}`, {
+      const response = await fetch(`/api/posts/${slug}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated),

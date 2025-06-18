@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { cloudinary } from '@/lib/cloudinary';
+
+// Define the Cloudinary upload result type
+interface CloudinaryUploadResult {
+  secure_url: string;
+  public_id: string;
+  url: string;
+  width: number;
+  height: number;
+  format: string;
+  resource_type: string;
+  created_at: string;
+  bytes: number;
+  etag: string;
+  placeholder: boolean;
+  original_filename: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,22 +32,31 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Get file extension
-    const originalName = file.name;
-    const extension = originalName.split('.').pop();
-    
-    // Create unique filename
-    const filename = `${uuidv4()}.${extension}`;
-    
-    // Save to public/uploads directory
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
-    const filePath = join(uploadDir, filename);
-    
-    await writeFile(filePath, buffer);
-    
-    // Return the URL that can be used to access the file
+    // Convert buffer to base64
+    const base64String = buffer.toString('base64');
+    const dataURI = `data:${file.type};base64,${base64String}`;
+
+    // Upload to Cloudinary
+    const result = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
+      cloudinary.uploader.upload(
+        dataURI,
+        {
+          folder: 'blog-uploads',
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result as CloudinaryUploadResult);
+          }
+        }
+      );
+    });
+
     return NextResponse.json({
-      url: `/uploads/${filename}`,
+      url: result.secure_url,
+      public_id: result.public_id,
     });
   } catch (error) {
     console.error('Upload error:', error);
