@@ -10,7 +10,7 @@ export default function Navigation() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="text-xl font-bold">
-            Blog
+            Decoded by 100rabh
           </Link>
           {isAdmin && (
             <div className="flex items-center gap-4">
