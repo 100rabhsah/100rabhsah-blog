@@ -1,3 +1,5 @@
+export const revalidate = 60;
+
 import { databaseService } from '@/lib/database';
 import BlogListingContent from '@/components/BlogListingContent';
  
