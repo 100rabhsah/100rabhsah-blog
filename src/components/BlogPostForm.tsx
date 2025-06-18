@@ -36,9 +36,20 @@ export default function BlogPostForm({ onSubmit, initialValues, isEdit }: BlogPo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Generate slug if not provided
+    let generatedSlug = slug;
+    if (!generatedSlug) {
+      generatedSlug = title.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+    
     const newPost = {
       title,
-      slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
+      slug: generatedSlug,
       date: new Date().toISOString().split('T')[0],
       excerpt,
       content,

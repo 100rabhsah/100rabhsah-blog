@@ -11,6 +11,9 @@ export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+  const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -49,18 +52,16 @@ export default function ImageUpload({ onImageUpload }: ImageUploadProps) {
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: 'POST', body: formData }
+        );
 
-        if (!response.ok) {
-          throw new Error('Upload failed');
-        }
-
+        if (!response.ok) throw new Error('Upload failed');
         const data = await response.json();
-        onImageUpload(data.url);
+        onImageUpload(data.secure_url);
       }
     } catch (error) {
       console.error('Upload error:', error);

@@ -8,6 +8,12 @@ const POSTS_FILE = path.join(process.cwd(), 'src/data/blog-posts.ts');
 export async function POST(request: Request) {
   try {
     const post = await request.json();
+    console.log('Received post data:', post);
+    
+    // Ensure slug is properly generated
+    if (!post.slug) {
+      post.slug = post.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
     
     // Read existing posts
     const fileContent = await readFile(POSTS_FILE, 'utf-8');
@@ -18,12 +24,24 @@ export async function POST(request: Request) {
     }
 
     const existingPosts: BlogPost[] = eval(postsMatch[1]);
+    console.log('Existing posts count:', existingPosts.length);
+    
+    // Check for duplicate slug
+    const existingSlug = existingPosts.find(p => p.slug === post.slug);
+    if (existingSlug) {
+      return NextResponse.json(
+        { error: 'A post with this slug already exists' },
+        { status: 400 }
+      );
+    }
     
     // Add new post with ID
     const newPost: BlogPost = {
       ...post,
       id: (existingPosts.length + 1).toString()
     };
+    
+    console.log('New post to save:', newPost);
     
     // Update the file content
     const updatedContent = fileContent.replace(
@@ -32,12 +50,13 @@ export async function POST(request: Request) {
     );
     
     await writeFile(POSTS_FILE, updatedContent, 'utf-8');
+    console.log('Post saved successfully');
     
     return NextResponse.json({ success: true, post: newPost });
   } catch (error) {
     console.error('Error saving post:', error);
     return NextResponse.json(
-      { error: 'Failed to save post' },
+      { error: error instanceof Error ? error.message : 'Failed to save post' },
       { status: 500 }
     );
   }
