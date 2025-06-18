@@ -1,43 +1,25 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '@/context/AdminContext';
+import { blogPosts } from '@/data/blog-posts';
 import BlogPostForm from '@/components/BlogPostForm';
 import { BlogPost } from '@/types/blog';
 import { useState, useEffect } from 'react';
-import { getPosts } from '@/lib/posts';
 
 export default function EditPostPageContent({ slug }: { slug: string }) {
   const { isAdmin } = useAdmin();
   const router = useRouter();
   const [error, setError] = useState('');
   const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPost() {
-      try {
-        const posts = await getPosts();
-        const found = posts.find((p: BlogPost) => p.slug === slug);
-        setPost(found || null);
-      } catch (error) {
-        console.error('Error fetching post:', error);
-        setError('Failed to load post');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchPost();
+    const found = blogPosts.find((p) => p.slug === slug);
+    setPost(found || null);
   }, [slug]);
 
   if (!isAdmin) {
     return <div className="max-w-2xl mx-auto px-4 py-8 text-center text-red-600">Admin access required.</div>;
   }
-
-  if (loading) {
-    return <div className="max-w-2xl mx-auto px-4 py-8 text-center">Loading...</div>;
-  }
-
   if (!post) {
     return <div className="max-w-2xl mx-auto px-4 py-8 text-center">Post not found.</div>;
   }
