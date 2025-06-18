@@ -3,7 +3,8 @@ import { writeFile, readFile } from 'fs/promises';
 import path from 'path';
 import { BlogPost } from '@/types/blog';
 
-const POSTS_FILE = path.join(process.cwd(), 'src/data/blog-posts.ts');
+// Use JSON file in public directory for production compatibility
+const POSTS_FILE = path.join(process.cwd(), 'public', 'blog-posts.json');
 
 export async function POST(request: Request) {
   try {
@@ -15,15 +16,16 @@ export async function POST(request: Request) {
       post.slug = post.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     }
     
-    // Read existing posts
-    const fileContent = await readFile(POSTS_FILE, 'utf-8');
-    const postsMatch = fileContent.match(/export const blogPosts: BlogPost\[\] = (\[[\s\S]*?\]);/);
-    
-    if (!postsMatch) {
-      throw new Error('Could not parse existing posts');
+    // Read existing posts from JSON file
+    let existingPosts: BlogPost[] = [];
+    try {
+      const fileContent = await readFile(POSTS_FILE, 'utf-8');
+      existingPosts = JSON.parse(fileContent);
+    } catch {
+      // File doesn't exist yet, start with empty array
+      console.log('No existing posts file found, starting fresh');
     }
-
-    const existingPosts: BlogPost[] = eval(postsMatch[1]);
+    
     console.log('Existing posts count:', existingPosts.length);
     
     // Check for duplicate slug
@@ -43,13 +45,8 @@ export async function POST(request: Request) {
     
     console.log('New post to save:', newPost);
     
-    // Update the file content
-    const updatedContent = fileContent.replace(
-      /export const blogPosts: BlogPost\[\] = \[[\s\S]*?\];/,
-      `export const blogPosts: BlogPost[] = ${JSON.stringify([...existingPosts, newPost], null, 2)};`
-    );
-    
-    await writeFile(POSTS_FILE, updatedContent, 'utf-8');
+    // Save to JSON file
+    await writeFile(POSTS_FILE, JSON.stringify([...existingPosts, newPost], null, 2), 'utf-8');
     console.log('Post saved successfully');
     
     return NextResponse.json({ success: true, post: newPost });
@@ -57,6 +54,28 @@ export async function POST(request: Request) {
     console.error('Error saving post:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to save post' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    // Read posts from JSON file
+    let posts: BlogPost[] = [];
+    try {
+      const fileContent = await readFile(POSTS_FILE, 'utf-8');
+      posts = JSON.parse(fileContent);
+    } catch {
+      // File doesn't exist yet, return empty array
+      console.log('No posts file found');
+    }
+    
+    return NextResponse.json({ posts });
+  } catch (error) {
+    console.error('Error reading posts:', error);
+    return NextResponse.json(
+      { error: 'Failed to read posts' },
       { status: 500 }
     );
   }

@@ -1,6 +1,7 @@
-import { blogPosts } from '@/data/blog-posts';
 import BlogListingContent from '@/components/BlogListingContent';
- 
-export default function BlogPage() {
-  return <BlogListingContent initialPosts={blogPosts} />;
+import { getPosts } from '@/lib/posts';
+
+export default async function BlogPage() {
+  const posts = await getPosts();
+  return <BlogListingContent initialPosts={posts} />;
 } 
